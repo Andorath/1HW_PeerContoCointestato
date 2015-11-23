@@ -18,14 +18,24 @@ import java.util.logging.Logger;
  */
 public class UIPeer
 {
-
+    private static final int JS_PORT = 9999;
+  
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args)
     {
-        File file = new File("/Users/Marco/NetBeansProjects/1HW_PeerContoCointestato/src/peer1hw/port");
+        File file = new File("./src/peer1hw/port");
         int myPort = 0;
+        
+        if (args.length < 1)
+        {
+            System.out.println("ATTENZIONE: INSERIRE L'INDIRIZZO IP DEL JIN SERVER");
+            System.exit(1);
+        }
+        
+        String js_addr = args[0];
+        
         try 
         {
             Scanner s = new Scanner(file);
@@ -38,7 +48,7 @@ public class UIPeer
             System.out.println("La mia porta è: " + myPort);
             
             Peer peer = new Peer(myPort);
-            peer.connect();
+            peer.connect(js_addr, JS_PORT);
             peer.start();
             
         } 

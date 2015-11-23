@@ -18,8 +18,6 @@ import java.util.logging.Logger;
  */
 class Peer
 {
-    private static final int JS_PORT = 9999;
-    private static final String JS_ADDRESS = "localhost";
     private static final int nThread = 100;
     
     private int myPort;
@@ -30,9 +28,9 @@ class Peer
         this.myPort = myPort;
     }
     
-    public void connect()
+    public void connect(String js_addr, int js_port)
     {
-        try (Socket socket = new Socket(JS_ADDRESS, JS_PORT))
+        try (Socket socket = new Socket(js_addr, js_port))
         {
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
