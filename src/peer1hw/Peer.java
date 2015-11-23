@@ -35,8 +35,7 @@ class Peer
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
             
-            
-            InetSocketAddress myInetSocketAddress = new InetSocketAddress(myPort);
+            InetSocketAddress myInetSocketAddress = new InetSocketAddress(socket.getLocalAddress(), myPort);
             out.writeObject(myInetSocketAddress);
             myNeighbours = (HashSet<InetSocketAddress>) in.readObject();
         }
