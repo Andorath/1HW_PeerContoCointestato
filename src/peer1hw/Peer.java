@@ -1,11 +1,13 @@
 package peer1hw;
 
+import communication.OperationMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -18,14 +20,27 @@ import java.util.logging.Logger;
  */
 class Peer
 {
+    //Magic Numbers
     private static final int nThread = 100;
+    private static final int N_PEER = 4;
     
     private int myPort;
+    private InetSocketAddress myInetSocketAddress;
     HashSet<InetSocketAddress> myNeighbours;
+    
+    private Conto conto;
+    private VectorClock myVectorClock;
+    private ArrayList<OperationMessage> messageBuffer;
 
+    //Questo peer presuppone che la rete sia a regime per poter fare
+    //operazioni sul conto. (Tutti i conti non hanno saldo quando vengono creati
+    //i peer).
     public Peer(int myPort)
     {
         this.myPort = myPort;
+        this.conto = new Conto();
+        this.myVectorClock = new VectorClock(N_PEER, myPort % 10);
+        this.messageBuffer = new ArrayList<>();
     }
     
     public void connect(String js_addr, int js_port)
@@ -35,7 +50,7 @@ class Peer
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
             
-            InetSocketAddress myInetSocketAddress = new InetSocketAddress(socket.getLocalAddress(), myPort);
+            myInetSocketAddress = new InetSocketAddress(socket.getLocalAddress(), myPort);
             out.writeObject(myInetSocketAddress);
             myNeighbours = (HashSet<InetSocketAddress>) in.readObject();
         }
@@ -54,7 +69,10 @@ class Peer
     
     private void startClientSide()
     {
-        //new ClientHandler(myNeighbours).start();
+        new Thread(new ClientHandler(myInetSocketAddress,
+                                     myNeighbours, 
+                                     myVectorClock, 
+                                     conto)).start();
     }
 
     private void startServerSide()
@@ -66,7 +84,11 @@ class Peer
             while (true)
             {
                 Socket incomingSocket = myServerSocket.accept();
-                ServerHandler worker = new ServerHandler(incomingSocket, myNeighbours);
+                ServerHandler worker = new ServerHandler(myInetSocketAddress, 
+                                                         incomingSocket, 
+                                                         myNeighbours, 
+                                                         myVectorClock,
+                                                         messageBuffer);
                 executor.execute(worker);
             }
         }

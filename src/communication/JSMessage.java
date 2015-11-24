@@ -7,7 +7,7 @@ import java.util.HashSet;
  *
  * @author Damiano Di Stefano, Marco Giuseppe Salafia
  */
-public class JSMessage extends Message
+public class JSMessage extends Message<String>
 {
     private HashSet<InetSocketAddress> neighbours;
 

@@ -51,7 +51,8 @@ public final class VectorClock
             return false;
         else
             for (int i = 0; i < processVector.length; ++i)
-                if((vc.myIndex != this.myIndex) && (this.processVector[i] > vc.getProcessVector()[i]))
+                if((vc.myIndex != this.myIndex) && 
+                   (this.processVector[i] > vc.getProcessVector()[i]))
                     return false;
         
         return true;
