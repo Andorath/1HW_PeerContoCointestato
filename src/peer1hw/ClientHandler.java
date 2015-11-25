@@ -58,6 +58,7 @@ public class ClientHandler implements Runnable
                     break;
                 case 6:
                     printNeighbours();
+                    break;
                 default:
                     System.out.println("Comando non contemplato!");
             }
@@ -72,7 +73,7 @@ public class ClientHandler implements Runnable
         System.out.println("\t3) Stampa il saldo attuale");
         System.out.println("\t4) Global Snapshot");
         System.out.println("\t5) Stampa Log");
-        System.out.println("\n6) Stampa Peer Vicini\n");
+        System.out.println("\t6) Stampa Peer Vicini\n");
         System.out.println("--------------------------------");
         System.out.println("\nInserisci il comando:");
     }
@@ -136,8 +137,10 @@ public class ClientHandler implements Runnable
     }
     
     private void printNeighbours()
-    {
+    { 
+        System.out.println("{");
         for (InetSocketAddress isa : myNeighbours)
             System.out.println("Indirizzo: " + isa.getAddress() + " - Porta: " + isa.getPort());
+        System.out.println("}");
     }
 }
