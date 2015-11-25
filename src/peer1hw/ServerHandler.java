@@ -5,7 +5,6 @@ import communication.Message;
 import communication.OperationMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -49,8 +48,8 @@ class ServerHandler implements Runnable
     public void run()
     {
         //Lasciare solo l'input stream
-        try (ObjectOutputStream out = new ObjectOutputStream(incomingSocket.getOutputStream()); 
-            ObjectInputStream in = new ObjectInputStream(incomingSocket.getInputStream()))
+        //Outputstream fa saltare tutti in aria
+        try (ObjectInputStream in = new ObjectInputStream(incomingSocket.getInputStream()))
         {
             Message m = (Message) in.readObject();
             processMessage(m);
@@ -71,9 +70,9 @@ class ServerHandler implements Runnable
             System.err.println("FORMATO DEL MESSAGGIO NON RICONOSCIUTO PER IL PROCESSAMENTO!");
     }
     
-    private void updateNeighbours(HashSet<InetSocketAddress> group)
+    synchronized private void updateNeighbours(HashSet<InetSocketAddress> group)
     {
-        myNeighbours = group;
+        myNeighbours.addAll(group);
         System.out.println("I miei vicini sono: ");
         System.out.println(myNeighbours);
     }

@@ -79,8 +79,8 @@ public class ClientHandler implements Runnable
     }
 
     
-    
-    private void causalOrderMulticast(OperationMessage.OperationType operationType,
+    //Si deve sincronizzare sull'Hashset dei vicini
+    synchronized private void causalOrderMulticast(OperationMessage.OperationType operationType,
                                       double amount)
     {
         myVectorClock.updateVectorClock();
@@ -115,13 +115,13 @@ public class ClientHandler implements Runnable
     private double getAmount()
     {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("\t> Amount: ");
+        System.out.println("> Amount: ");
         return scanner.nextDouble();
     }
 
     private void printTotal()
     {
-        System.out.println("SALDO DISPONIBILE :> " + conto.getTotal());
+        System.out.println("> SALDO DISPONIBILE : " + conto.getTotal());
     }
     
     //TODO: che non ti devi proprio
