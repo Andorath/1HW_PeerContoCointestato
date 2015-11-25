@@ -4,8 +4,6 @@ import communication.Forwarder;
 import communication.Message;
 import communication.OperationMessage;
 import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Scanner;
 
@@ -44,10 +42,10 @@ public class ClientHandler implements Runnable
             switch(choice)
             {
                 case 1:
-                    deposit();
+                    withdraw();
                     break;
                 case 2:
-                    withdraw();
+                    deposit();
                     break;
                 case 3:
                     printTotal();

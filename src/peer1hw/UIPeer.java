@@ -41,6 +41,8 @@ public class UIPeer
             Scanner s = new Scanner(file);
             myPort = s.nextInt();
             
+            assert (myPort < 10004) && (myPort > 9999);
+            
             PrintWriter p = new PrintWriter(file);
             p.print(myPort+1);
             p.flush();

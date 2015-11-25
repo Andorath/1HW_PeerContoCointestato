@@ -26,6 +26,7 @@ class ServerHandler implements Runnable
     private Socket incomingSocket;
     
     private VectorClock myVectorClock;
+    private Conto conto; 
     private ArrayList<OperationMessage> messageBuffer;
     
     
@@ -33,12 +34,14 @@ class ServerHandler implements Runnable
                          Socket incomingSocket, 
                          HashSet<InetSocketAddress> myNeighbours, 
                          VectorClock myVectorClock,
+                         Conto conto,
                          ArrayList<OperationMessage> messageBuffer)
     {
         this.myInetSocketAddress = myInetSocketAddress;
         this.myNeighbours = myNeighbours;
         this.incomingSocket = incomingSocket;
         this.myVectorClock = myVectorClock;
+        this.conto = conto;
         this.messageBuffer = messageBuffer;
     }
 
@@ -60,7 +63,12 @@ class ServerHandler implements Runnable
     
     private void processMessage(Message m)
     {
-        if (m instanceof JSMessage)  updateNeighbours(((JSMessage) m).getNeighbours());
+        if (m instanceof JSMessage)  
+            updateNeighbours(((JSMessage) m).getNeighbours());
+        else if (m instanceof OperationMessage) 
+            processOperationMessage((OperationMessage) m);
+        else 
+            System.err.println("FORMATO DEL MESSAGGIO NON RICONOSCIUTO PER IL PROCESSAMENTO!");
     }
     
     private void updateNeighbours(HashSet<InetSocketAddress> group)
@@ -68,6 +76,77 @@ class ServerHandler implements Runnable
         myNeighbours = group;
         System.out.println("I miei vicini sono: ");
         System.out.println(myNeighbours);
+    }
+
+    private void processOperationMessage(OperationMessage m)
+    {
+        switch (m.getOperationType())
+        {
+            case DEPOSIT:
+            case WITHDRAW:
+                receiveOperationMessage(m);
+                break;
+            case GLOBALSNAPSHOT:
+                //TODO
+                break;
+            default:
+                System.err.println("OPERAZIONE INVALIDA!");
+        }
+    }
+
+    private void receiveOperationMessage(OperationMessage m)
+    {
+        if (myVectorClock.isCausalHappenedBefore(m.getSenderVectorClock()))
+        {
+            deliverOperationMessage(m);
+            checkMessageBuffer();
+        }
+        else
+            enqueueOperationMessage(m);
+    }
+
+    private void deliverOperationMessage(OperationMessage m)
+    {
+        int processIndex = m.getSenderVectorClock().getProcessIndex();
+        myVectorClock.updateVectorClockForProcess(processIndex);
+        
+        switch (m.getOperationType())
+        {
+            case DEPOSIT:
+                conto.deposit(m.getSender(), m.getBody());
+                break;
+            case WITHDRAW:
+                conto.withdraw(m.getSender(), m.getBody());
+                break;
+            default:
+                System.err.println("FORMATO DELL'OPERAZIONE NON RICONOSCIUTO!");
+        }
+    }
+    
+    synchronized private void checkMessageBuffer()
+    {
+        boolean end = false;
+        
+        while (!end)
+        {
+            for(OperationMessage om : messageBuffer)
+            {
+                if (myVectorClock.isCausalHappenedBefore(om.getSenderVectorClock()))
+                {
+                    deliverOperationMessage(om);
+                    messageBuffer.remove(om);
+                    end = false;
+                    break;
+                }
+                else
+                    end = true;
+            }
+        }
+    }
+
+    synchronized private void enqueueOperationMessage(OperationMessage m)
+    {
+        messageBuffer.add(m);
     }
     
 }

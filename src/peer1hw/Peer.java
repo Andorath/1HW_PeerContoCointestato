@@ -88,6 +88,7 @@ class Peer
                                                          incomingSocket, 
                                                          myNeighbours, 
                                                          myVectorClock,
+                                                         conto,
                                                          messageBuffer);
                 executor.execute(worker);
             }

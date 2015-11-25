@@ -35,6 +35,11 @@ public class OperationMessage extends Message<Double>
         WITHDRAW,
         GLOBALSNAPSHOT;
     }
+
+    public OperationType getOperationType()
+    {
+        return operationType;
+    }
     
     
 }

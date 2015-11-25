@@ -5,11 +5,13 @@
  */
 package peer1hw;
 
+import java.io.Serializable;
+
 /**
  *
  * @author Marco
  */
-public final class VectorClock 
+public final class VectorClock implements Serializable
 {
     private int processVector[];
     private int myIndex;
@@ -23,6 +25,11 @@ public final class VectorClock
     synchronized public int [] getProcessVector()
     {
         return this.processVector;
+    }
+
+    public int getProcessIndex()
+    {
+        return myIndex;
     }
     
     synchronized public void printVectorClock()
@@ -47,12 +54,12 @@ public final class VectorClock
     //Rispetto la Causalità
     synchronized public boolean isCausalHappenedBefore(VectorClock vc)
     {
-        if (this.processVector[myIndex] != vc.getProcessVector()[myIndex] - 1)
+        if (this.processVector[vc.myIndex] != vc.getProcessVector()[vc.myIndex] - 1)
             return false;
         else
             for (int i = 0; i < processVector.length; ++i)
-                if((vc.myIndex != this.myIndex) && 
-                   (this.processVector[i] > vc.getProcessVector()[i]))
+                if((i != vc.myIndex) && 
+                   (this.processVector[i] < vc.getProcessVector()[i]))
                     return false;
         
         return true;

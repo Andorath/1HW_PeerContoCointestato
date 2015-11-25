@@ -11,7 +11,7 @@ import java.util.logging.Logger;
  *
  * @author Damiano Di Stefano, Marco Giuseppe Salafia
  */
-public class Forwarder
+public class Forwarder 
 {
     public static void sendMessage(Message m)
     {
