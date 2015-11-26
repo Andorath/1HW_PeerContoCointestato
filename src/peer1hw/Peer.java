@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
  *
  * @author Damiano Di Stefano, Marco Giuseppe Salafia
  */
-class Peer
+public class Peer
 {
     //Magic Numbers
     private static final int nThread = 100;
@@ -26,11 +27,14 @@ class Peer
     
     private int myPort;
     private InetSocketAddress myInetSocketAddress;
-    HashSet<InetSocketAddress> myNeighbours;
+    private HashSet<InetSocketAddress> myNeighbours;
     
     private Conto conto;
     private VectorClock myVectorClock;
     private ArrayList<OperationMessage> messageBuffer;
+    
+    private State stato;
+    private Logger logger;
 
     //Questo peer presuppone che la rete sia a regime per poter fare
     //operazioni sul conto. (Tutti i conti non hanno saldo quando vengono creati
@@ -41,6 +45,31 @@ class Peer
         this.conto = new Conto();
         this.myVectorClock = new VectorClock(N_PEER, myPort % 10);
         this.messageBuffer = new ArrayList<>();
+        this.stato = new State();
+        
+        assert stato != null;
+        
+        this.logger = initLog();
+    }
+    
+    private Logger initLog()
+    {
+        Logger l = Logger.getLogger(Peer.class.getName());
+        
+        StateHandler sh = new StateHandler(this.stato);
+        try
+        {
+            FileHandler fh = new FileHandler("./src/peer1hw/log" + (myPort % 10));
+            l.addHandler(fh);
+        }
+        catch (IOException | SecurityException ex)
+        {
+            Logger.getLogger(Peer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        l.addHandler(sh);
+        
+        return l;
     }
     
     public void connect(String js_addr, int js_port)
@@ -72,7 +101,9 @@ class Peer
         new Thread(new ClientHandler(myInetSocketAddress,
                                      myNeighbours, 
                                      myVectorClock, 
-                                     conto)).start();
+                                     conto,
+                                     stato,
+                                     logger)).start();
     }
 
     private void startServerSide()
@@ -89,7 +120,8 @@ class Peer
                                                          myNeighbours, 
                                                          myVectorClock,
                                                          conto,
-                                                         messageBuffer);
+                                                         messageBuffer,
+                                                         logger);
                 executor.execute(worker);
             }
         }

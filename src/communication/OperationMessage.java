@@ -23,6 +23,28 @@ public class OperationMessage extends Message<Double>
         this.senderVectorClock = senderVectorClock;
         this.operationType = operationType;
     }
+    
+    static public String getRecordForMessage(OperationMessage message)
+    {
+        OperationMessage.OperationType type = message.getOperationType();
+        String record = null;
+        
+        switch (type)
+        {
+            case DEPOSIT:
+                record = "[PEER: " + message.getSender() +
+                         " deposita " + message.getBody() + "]";
+                break;
+            case WITHDRAW:
+                record = "[PEER: " + message.getSender() +
+                         " preleva " + message.getBody() + "]";
+                break;
+            default:
+                record = "FORMATO MESSAGGIO NON RICONOSCIUTO";
+        }
+        
+        return record;
+    }
 
     public VectorClock getSenderVectorClock()
     {

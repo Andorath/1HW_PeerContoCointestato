@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static communication.OperationMessage.getRecordForMessage;
 
 /**
  *
@@ -27,6 +28,7 @@ class ServerHandler implements Runnable
     private VectorClock myVectorClock;
     private Conto conto; 
     private ArrayList<OperationMessage> messageBuffer;
+    private Logger logger;
     
     
     public ServerHandler(InetSocketAddress myInetSocketAddress,
@@ -34,7 +36,8 @@ class ServerHandler implements Runnable
                          HashSet<InetSocketAddress> myNeighbours, 
                          VectorClock myVectorClock,
                          Conto conto,
-                         ArrayList<OperationMessage> messageBuffer)
+                         ArrayList<OperationMessage> messageBuffer,
+                         Logger logger)
     {
         this.myInetSocketAddress = myInetSocketAddress;
         this.myNeighbours = myNeighbours;
@@ -42,6 +45,7 @@ class ServerHandler implements Runnable
         this.myVectorClock = myVectorClock;
         this.conto = conto;
         this.messageBuffer = messageBuffer;
+        this.logger = logger;
     }
 
     @Override
@@ -120,6 +124,9 @@ class ServerHandler implements Runnable
             default:
                 System.err.println("FORMATO DELL'OPERAZIONE NON RICONOSCIUTO!");
         }
+        
+        String record = getRecordForMessage(m);
+        logger.log(Level.INFO, record);
     }
     
     synchronized private void checkMessageBuffer()

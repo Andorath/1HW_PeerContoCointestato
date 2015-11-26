@@ -6,6 +6,8 @@ import communication.OperationMessage;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -17,16 +19,22 @@ public class ClientHandler implements Runnable
     private VectorClock myVectorClock;
     private Conto conto; 
     private InetSocketAddress myInetSocketAddress;
+    private State stato;
+    private Logger logger;
 
     public ClientHandler(InetSocketAddress myInetSocketAddress, 
                          HashSet<InetSocketAddress> myNeighbours, 
                          VectorClock myVectorClock, 
-                         Conto conto)
+                         Conto conto,
+                         State stato,
+                         Logger logger)
     {
         this.myInetSocketAddress = myInetSocketAddress;
         this.myNeighbours = myNeighbours;
         this.myVectorClock = myVectorClock;
         this.conto = conto;
+        this.stato = stato;
+        this.logger = logger;
     }
     
     @Override
@@ -101,6 +109,10 @@ public class ClientHandler implements Runnable
         double amount = getAmount();
         causalOrderMulticast(OperationMessage.OperationType.DEPOSIT, amount);
         conto.deposit(myInetSocketAddress, amount);
+        String record = "[PEER: " + myInetSocketAddress +
+                         " deposita " + amount + "]";
+        //Logger.getLogger(Peer.class.getName()).log(Level.INFO, record);
+        logger.log(Level.INFO, record);
     }
     
     private void withdraw()
@@ -110,6 +122,9 @@ public class ClientHandler implements Runnable
         double amount = getAmount();
         causalOrderMulticast(OperationMessage.OperationType.WITHDRAW, amount);
         conto.withdraw(myInetSocketAddress, amount);
+        String record = "[PEER: " + myInetSocketAddress +
+                         " preleva " + amount + "]";
+        Logger.getLogger(Peer.class.getName()).log(Level.INFO, record);
     }
     
     private double getAmount()
@@ -133,7 +148,7 @@ public class ClientHandler implements Runnable
 
     private void printLog()
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        stato.printInfrastacstrur();
     }
     
     private void printNeighbours()
