@@ -14,7 +14,12 @@ public class State implements Serializable
     public State()
     {
         this.history = new LinkedList<>();
-    }  
+    }
+    
+    private State (State s)
+    {
+        this.history = new LinkedList<>(s.history);
+    }
     
     synchronized protected void recordOperation(String record)
     {
@@ -27,4 +32,8 @@ public class State implements Serializable
             System.out.println(record);
     }
     
+    synchronized public State getCopy()
+    {
+        return new State(this);
+    }
 }

@@ -1,26 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE log SYSTEM "logger.dtd">
 <log>
-<record>
-  <date>2015-11-26T18:50:34</date>
-  <millis>1448560234714</millis>
-  <sequence>0</sequence>
-  <logger>peer1hw.Peer</logger>
-  <level>INFO</level>
-  <class>peer1hw.ServerHandler</class>
-  <method>deliverOperationMessage</method>
-  <thread>11</thread>
-  <message>[PEER: /127.0.0.1:10003 deposita 1000.0]</message>
-</record>
-<record>
-  <date>2015-11-26T18:51:25</date>
-  <millis>1448560285428</millis>
-  <sequence>1</sequence>
-  <logger>peer1hw.Peer</logger>
-  <level>INFO</level>
-  <class>peer1hw.ServerHandler</class>
-  <method>deliverOperationMessage</method>
-  <thread>12</thread>
-  <message>[PEER: /127.0.0.1:10001 preleva 500.0]</message>
-</record>
 </log>

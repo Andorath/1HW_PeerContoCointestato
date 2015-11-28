@@ -1,5 +1,7 @@
 package peer1hw;
 
+import communication.Forwarder;
+import communication.GlobalSnapshotMessage;
 import communication.JSMessage;
 import communication.Message;
 import communication.OperationMessage;
@@ -11,7 +13,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.TreeMap;
 import static communication.OperationMessage.getRecordForMessage;
+import java.util.Map;
+import static peer1hw.Peer.peersAreEqual;
 
 /**
  *
@@ -27,7 +32,9 @@ class ServerHandler implements Runnable
     
     private VectorClock myVectorClock;
     private Conto conto; 
+    private State stato;
     private ArrayList<OperationMessage> messageBuffer;
+    private final TreeMap<Marker, Recorder> markerMap;
     private Logger logger;
     
     
@@ -36,7 +43,9 @@ class ServerHandler implements Runnable
                          HashSet<InetSocketAddress> myNeighbours, 
                          VectorClock myVectorClock,
                          Conto conto,
+                         State stato,
                          ArrayList<OperationMessage> messageBuffer,
+                         TreeMap<Marker, Recorder> markerMap,
                          Logger logger)
     {
         this.myInetSocketAddress = myInetSocketAddress;
@@ -44,7 +53,9 @@ class ServerHandler implements Runnable
         this.incomingSocket = incomingSocket;
         this.myVectorClock = myVectorClock;
         this.conto = conto;
+        this.stato = stato;
         this.messageBuffer = messageBuffer;
+        this.markerMap = markerMap;
         this.logger = logger;
     }
 
@@ -70,6 +81,8 @@ class ServerHandler implements Runnable
             updateNeighbours(((JSMessage) m).getNeighbours());
         else if (m instanceof OperationMessage) 
             processOperationMessage((OperationMessage) m);
+        else if (m instanceof GlobalSnapshotMessage)
+            processGlobalSnapshotMessage((GlobalSnapshotMessage) m);
         else 
             System.err.println("FORMATO DEL MESSAGGIO NON RICONOSCIUTO PER IL PROCESSAMENTO!");
     }
@@ -88,9 +101,6 @@ class ServerHandler implements Runnable
             case DEPOSIT:
             case WITHDRAW:
                 receiveOperationMessage(m);
-                break;
-            case GLOBALSNAPSHOT:
-                //TODO
                 break;
             default:
                 System.err.println("OPERAZIONE INVALIDA!");
@@ -126,7 +136,20 @@ class ServerHandler implements Runnable
         }
         
         String record = getRecordForMessage(m);
+        
+        //Controlla se sta registrando ancora messaggi da questo canale
+        for(Map.Entry<Marker, Recorder> entry: markerMap.entrySet())
+        {
+            Recorder r = entry.getValue();
+            InetSocketAddress sender = m.getSender();
+            if(r.shouldBeRegistered(sender))
+            {
+                r.getSnapshot().updateChannelsState(record);
+            }
+        }
+        
         logger.log(Level.INFO, record);
+        
     }
     
     synchronized private void checkMessageBuffer()
@@ -153,6 +176,94 @@ class ServerHandler implements Runnable
     synchronized private void enqueueOperationMessage(OperationMessage m)
     {
         messageBuffer.add(m);
+    }
+
+    private void processGlobalSnapshotMessage(GlobalSnapshotMessage m)
+    {
+        Marker marker = m.getMarker();
+      
+        synchronized(markerMap)
+        {       
+            if(markerMap.containsKey(marker))
+            {
+                Recorder recorder = markerMap.get(marker);
+                recorder.incrementCounter();
+                recorder.excludeChannelFromRecord(m.getSender());
+
+                if(isMyMarker(marker))
+                {
+                    Snapshot snapshot = m.getBody();
+                    GlobalSnapshot gs = (GlobalSnapshot) recorder.getSnapshot();
+                    gs.addSnapshot(snapshot);
+                }
+                
+                System.out.println("\nRicevuto da " + m.getSender() + " >>> " + marker 
+                + " Contatore Marker Ricevuti >>> " + recorder.getCounter());
+                
+                if(recorder.getCounter() == myNeighbours.size())
+                    completeSnapshotTask(marker, recorder);
+            }
+            else //marker ricevuto prima volta
+            {
+                //TODO CANCELLARE PRINT
+                System.out.println("\n[PRIMO!] Ricevuto da " + m.getSender() + " >>> " + marker);
+                State frozenState = stato.getCopy()  ;
+                LocalSnapshot mySnapshot = new LocalSnapshot(myInetSocketAddress, frozenState); //freeze manuela
+                Recorder recorder = new Recorder(mySnapshot);
+                markerMap.put(marker, recorder);
+                
+                if(myNeighbours.size() == 1) //send stato
+                    completeSnapshotTask(marker, recorder);
+                else
+                    inoltraMarker(marker, m.getSender());
+            }
+        }
+    }
+
+    
+    private boolean isMyMarker(Marker marker)
+    {
+        return peersAreEqual(marker.getInitiator(), myInetSocketAddress);
+    }
+
+    private void completeSnapshotTask(Marker marker, Recorder recorder)
+    {        
+        if(isMyMarker(marker)) // stampo globalsnapshot
+        {
+            System.out.println(">>> [INITIATOR] HO COLLEZIONATO GLI STATI, STAMPO.");
+            GlobalSnapshot gs = (GlobalSnapshot) recorder.getSnapshot();
+            gs.printSnapshot();
+        }
+        else //invio mio stato all'initiator
+        {
+            System.out.println(">>> SEND STATO ALL'INITIATOR.");
+            InetSocketAddress initiator = marker.getInitiator();
+            Snapshot mySnapshot = markerMap.get(marker).getSnapshot();
+            GlobalSnapshotMessage gsMessage = new GlobalSnapshotMessage(myInetSocketAddress,
+                                                                        initiator, 
+ 
+                    marker, 
+                                                                        mySnapshot);
+            Forwarder.sendMessage(gsMessage);
+        }
+        
+        markerMap.remove(marker);
+    }
+
+    private void inoltraMarker(Marker marker, InetSocketAddress excludedPeer)
+    {
+        for(InetSocketAddress neighbour: myNeighbours)
+        {
+            if(!peersAreEqual(neighbour, excludedPeer) /*&& 
+               !peersAreEqual(neighbour, marker.getInitiator()))*/
+                    )
+                    
+            {
+                System.out.println(">>> INOLTRO MARKER A " + neighbour);
+                GlobalSnapshotMessage gsMessage = new GlobalSnapshotMessage(myInetSocketAddress, neighbour, marker, null);
+                Forwarder.sendMessage(gsMessage);
+            }
+        }
     }
     
 }

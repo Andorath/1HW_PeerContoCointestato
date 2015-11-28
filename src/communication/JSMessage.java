@@ -11,12 +11,6 @@ public class JSMessage extends Message<String>
 {
     private HashSet<InetSocketAddress> neighbours;
 
-    public JSMessage(InetSocketAddress sender, InetSocketAddress receiver, String body)
-    {
-        super(sender, receiver, body);
-        neighbours = new HashSet<>();
-    }
-
     public JSMessage(InetSocketAddress sender, 
                     InetSocketAddress receiver,
                     String body, 

@@ -1,11 +1,13 @@
 package peer1hw;
 
 import communication.Forwarder;
+import communication.GlobalSnapshotMessage;
 import communication.Message;
 import communication.OperationMessage;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Scanner;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,6 +22,8 @@ public class ClientHandler implements Runnable
     private Conto conto; 
     private InetSocketAddress myInetSocketAddress;
     private State stato;
+    private int globalSnapshotCounter;
+    final private TreeMap<Marker, Recorder> markerMap;
     private Logger logger;
 
     public ClientHandler(InetSocketAddress myInetSocketAddress, 
@@ -27,6 +31,7 @@ public class ClientHandler implements Runnable
                          VectorClock myVectorClock, 
                          Conto conto,
                          State stato,
+                         TreeMap<Marker, Recorder> markMap,
                          Logger logger)
     {
         this.myInetSocketAddress = myInetSocketAddress;
@@ -34,6 +39,8 @@ public class ClientHandler implements Runnable
         this.myVectorClock = myVectorClock;
         this.conto = conto;
         this.stato = stato;
+        this.globalSnapshotCounter = 0;
+        this.markerMap = markMap;
         this.logger = logger;
     }
     
@@ -88,9 +95,10 @@ public class ClientHandler implements Runnable
 
     
     //Si deve sincronizzare sull'Hashset dei vicini
-    synchronized private void causalOrderMulticast(OperationMessage.OperationType operationType,
+    private void causalOrderMulticast(OperationMessage.OperationType operationType,
                                       double amount)
     {
+        
         myVectorClock.updateVectorClock();
         for(InetSocketAddress receiver: myNeighbours)
         {
@@ -138,12 +146,25 @@ public class ClientHandler implements Runnable
     {
         System.out.println("> SALDO DISPONIBILE : " + conto.getTotal());
     }
-    
-    //TODO: che non ti devi proprio
 
     private void takeGlobalSnapshot()
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        State frozenState = stato.getCopy();
+        LocalSnapshot mySnapshot = new LocalSnapshot(myInetSocketAddress, frozenState);
+        GlobalSnapshot globalSnapshot = new GlobalSnapshot(myInetSocketAddress);
+        globalSnapshot.addSnapshot(mySnapshot);
+        
+        Recorder recorder = new Recorder(globalSnapshot);
+        recorder.setCounter(0);
+        Marker marker = new Marker(myInetSocketAddress, globalSnapshotCounter++);
+        
+        synchronized(markerMap)
+        {
+            markerMap.put(marker, recorder);
+        }
+        
+        floodMarker(marker);
+        
     }
 
     private void printLog()
@@ -157,5 +178,17 @@ public class ClientHandler implements Runnable
         for (InetSocketAddress isa : myNeighbours)
             System.out.println("Indirizzo: " + isa.getAddress() + " - Porta: " + isa.getPort());
         System.out.println("}");
+    }
+    
+    private void floodMarker(Marker marker)
+    {
+        for (InetSocketAddress isa : myNeighbours)
+        {
+            GlobalSnapshotMessage gsm = new GlobalSnapshotMessage(myInetSocketAddress, 
+                                                                  isa, 
+                                                                  marker, 
+                                                                  null);
+            Forwarder.sendMessage(gsm);
+        }
     }
 }

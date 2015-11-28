@@ -32,7 +32,7 @@ public class OperationMessage extends Message<Double>
         switch (type)
         {
             case DEPOSIT:
-                record = "[PEER: " + message.getSender() +
+                record = "[MESSAGGIO -> PEER: " + message.getSender() +
                          " deposita " + message.getBody() + "]";
                 break;
             case WITHDRAW:
@@ -54,8 +54,7 @@ public class OperationMessage extends Message<Double>
     public enum OperationType
     {
         DEPOSIT,
-        WITHDRAW,
-        GLOBALSNAPSHOT;
+        WITHDRAW;
     }
 
     public OperationType getOperationType()
