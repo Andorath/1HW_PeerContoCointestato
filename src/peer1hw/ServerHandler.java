@@ -14,8 +14,8 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.TreeMap;
-import static communication.OperationMessage.getRecordForMessage;
 import java.util.Map;
+import static communication.OperationMessage.getRecordForMessage;
 import static peer1hw.Peer.peersAreEqual;
 
 /**
@@ -241,8 +241,7 @@ class ServerHandler implements Runnable
             Snapshot mySnapshot = markerMap.get(marker).getSnapshot();
             GlobalSnapshotMessage gsMessage = new GlobalSnapshotMessage(myInetSocketAddress,
                                                                         initiator, 
- 
-                    marker, 
+                                                                        marker, 
                                                                         mySnapshot);
             Forwarder.sendMessage(gsMessage);
         }
@@ -254,10 +253,8 @@ class ServerHandler implements Runnable
     {
         for(InetSocketAddress neighbour: myNeighbours)
         {
-            if(!peersAreEqual(neighbour, excludedPeer) /*&& 
-               !peersAreEqual(neighbour, marker.getInitiator()))*/
-                    )
-                    
+            if(!peersAreEqual(neighbour, excludedPeer) && 
+               !peersAreEqual(neighbour, marker.getInitiator()))
             {
                 System.out.println(">>> INOLTRO MARKER A " + neighbour);
                 GlobalSnapshotMessage gsMessage = new GlobalSnapshotMessage(myInetSocketAddress, neighbour, marker, null);

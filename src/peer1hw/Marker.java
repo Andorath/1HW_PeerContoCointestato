@@ -45,7 +45,8 @@ public class Marker implements Serializable, Comparable<Marker>
         }        
     }*/
         
-        if(peersAreEqual(initiator, o.getInitiator()))
+        if(peersAreEqual(initiator, o.getInitiator())
+           && globalSnapshotNumber == o.globalSnapshotNumber)
             return 0;
         else 
             return -1;
@@ -54,6 +55,6 @@ public class Marker implements Serializable, Comparable<Marker>
     @Override
     public String toString()
     {
-        return "[MARKER] Initiator: " + initiator + " Counter: " + globalSnapshotNumber;
+        return "[MARKER] Initiator: " + initiator + " GlobalShotNumber: " + globalSnapshotNumber;
     }
 }
