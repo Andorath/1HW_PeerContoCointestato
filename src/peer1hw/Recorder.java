@@ -17,7 +17,7 @@ public class Recorder
     public Recorder(Snapshot snapshot)
     {
         this.snapshot = snapshot;
-        this.counter = 1;
+        this.counter = 0;
         this.closedChannels = new LinkedList<>();
     }
 
@@ -31,9 +31,9 @@ public class Recorder
         return counter;
     }
     
-    public void setCounter(int counter)
+    public InetSocketAddress getCommitter()
     {
-        this.counter = counter;
+        return closedChannels.getFirst();
     }
     
     public void incrementCounter()

@@ -155,7 +155,6 @@ public class ClientHandler implements Runnable
         globalSnapshot.addSnapshot(mySnapshot);
         
         Recorder recorder = new Recorder(globalSnapshot);
-        recorder.setCounter(0);
         Marker marker = new Marker(myInetSocketAddress, globalSnapshotCounter++);
         
         synchronized(markerMap)

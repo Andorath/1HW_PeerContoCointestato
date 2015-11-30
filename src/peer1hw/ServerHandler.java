@@ -184,38 +184,119 @@ class ServerHandler implements Runnable
       
         synchronized(markerMap)
         {       
-            if(markerMap.containsKey(marker))
+            if (markerMap.containsKey(marker))
             {
                 Recorder recorder = markerMap.get(marker);
-                recorder.incrementCounter();
-                recorder.excludeChannelFromRecord(m.getSender());
-
+                
                 if(isMyMarker(marker))
                 {
-                    Snapshot snapshot = m.getBody();
-                    GlobalSnapshot gs = (GlobalSnapshot) recorder.getSnapshot();
-                    gs.addSnapshot(snapshot);
+                    //Gestiscila come INITIATOR
+                    
+                    if(m.getBody() != null)
+                    {
+                        //aggiungo il snapshot del messaggio al mio globalsnapshot
+                        //incrementa il conteggio degli ack (ack del GS sono gli stati dei peer)
+                        //Quando ho tutti gli ack stampo
+                        //rimuovo dalla mappa il marker;
+                        
+                        GlobalSnapshot globalSnapshot = (GlobalSnapshot) recorder.getSnapshot();
+                        globalSnapshot.addSnapshot(m.getBody());
+                        recorder.incrementCounter();
+                        
+                        if(recorder.getCounter() == myNeighbours.size())
+                        {
+                            globalSnapshot.printSnapshot();
+                            markerMap.remove(marker);
+                        }
+                    }
                 }
-                
-                System.out.println("\nRicevuto da " + m.getSender() + " >>> " + marker 
-                + " Contatore Marker Ricevuti >>> " + recorder.getCounter());
-                
-                if(recorder.getCounter() == myNeighbours.size())
-                    completeSnapshotTask(marker, recorder);
-            }
-            else //marker ricevuto prima volta
-            {
-                //TODO CANCELLARE PRINT
-                System.out.println("\n[PRIMO!] Ricevuto da " + m.getSender() + " >>> " + marker);
-                State frozenState = stato.getCopy()  ;
-                LocalSnapshot mySnapshot = new LocalSnapshot(myInetSocketAddress, frozenState); //freeze manuela
-                Recorder recorder = new Recorder(mySnapshot);
-                markerMap.put(marker, recorder);
-                
-                if(myNeighbours.size() == 1) //send stato
-                    completeSnapshotTask(marker, recorder);
                 else
-                    inoltraMarker(marker, m.getSender());
+                {
+                    //Gestiscila come PEER che ha sta già lavorando su questo marker
+                    
+                    //Mi aspetto un ack dai miei vicini tranne il committer
+                    //Aumento il conteggio dei miei ack e aggiungo il sender ai banditi
+                    //Quando ho tutti gli ack che mi servono SEND STATO all'initiator
+                    //Mando un hack al committer. 
+                    
+                    recorder.excludeChannelFromRecord(m.getSender());
+                    recorder.incrementCounter();
+                    
+                    if(recorder.getCounter() == myNeighbours.size())
+                    {
+                        Snapshot mySnapshot = recorder.getSnapshot();
+                        InetSocketAddress initiator = marker.getInitiator();
+                        GlobalSnapshotMessage gsm = new GlobalSnapshotMessage(myInetSocketAddress, 
+                                                                              initiator, 
+                                                                              marker, 
+                                                                              mySnapshot);
+                        Forwarder.sendMessage(gsm);
+                        
+                        InetSocketAddress committer = recorder.getCommitter();
+                        GlobalSnapshotMessage ackMessage = new GlobalSnapshotMessage(myInetSocketAddress,
+                                                                                     committer,
+                                                                                     marker,
+                                                                                     null);
+                        Forwarder.sendMessage(ackMessage);
+                        markerMap.remove(marker);
+                    }
+                    
+                    
+                }
+            }
+            else //Qui non sarò mai INITIATOR
+            {
+                //Potrebbero arrivare ACK Spuri quindi:
+                //Se l'ACK (o messaggio) si riferisce a me come inititiator
+                //  lo scarto
+                
+                if(peersAreEqual(myInetSocketAddress, marker.getInitiator()))
+                    System.out.println("Ricevuto ACK SPURIO.");
+                
+                  //Altrimenti
+                //  Mi hanno COLORATO
+                
+                //inserisco marker nella mappa
+                //inserisco indirizzo di chi mi colora tra i committer
+                //Faccio il mio snapshot
+                //inibisco il canale
+                //inoltro il messaggio ai miei vicini
+                
+                else
+                {
+                    State myStato = stato.getCopy();
+                    Snapshot mySnapshot = new LocalSnapshot(myInetSocketAddress, myStato);
+                    
+                    //Se ho solo un vicino SEND STATO all'initiator
+                    //Mando l'ack al committer
+                    //Rimuovo la marker map
+                    
+                    if(myNeighbours.size() == 1)
+                    {
+                        InetSocketAddress initiator = marker.getInitiator();
+                        GlobalSnapshotMessage gsMessage = new GlobalSnapshotMessage(myInetSocketAddress,
+                                                                                    initiator, 
+                                                                                    marker, 
+                                                                                    mySnapshot);
+                        Forwarder.sendMessage(gsMessage);
+                        
+                        InetSocketAddress committer = m.getSender();
+                        GlobalSnapshotMessage ackMessage = new GlobalSnapshotMessage(myInetSocketAddress,
+                                                                                     committer,
+                                                                                     marker,
+                                                                                     null);
+                        Forwarder.sendMessage(ackMessage);
+                    }
+                    else
+                    {
+                        Recorder myRecorder = new Recorder(mySnapshot);
+                        myRecorder.incrementCounter();
+                        myRecorder.excludeChannelFromRecord(m.getSender());
+                        markerMap.put(marker, myRecorder);
+
+                        inoltraMarker(marker, m.getSender());
+                    }  
+                } 
             }
         }
     }
@@ -226,35 +307,11 @@ class ServerHandler implements Runnable
         return peersAreEqual(marker.getInitiator(), myInetSocketAddress);
     }
 
-    private void completeSnapshotTask(Marker marker, Recorder recorder)
-    {        
-        if(isMyMarker(marker)) // stampo globalsnapshot
-        {
-            System.out.println(">>> [INITIATOR] HO COLLEZIONATO GLI STATI, STAMPO.");
-            GlobalSnapshot gs = (GlobalSnapshot) recorder.getSnapshot();
-            gs.printSnapshot();
-        }
-        else //invio mio stato all'initiator
-        {
-            System.out.println(">>> SEND STATO ALL'INITIATOR.");
-            InetSocketAddress initiator = marker.getInitiator();
-            Snapshot mySnapshot = markerMap.get(marker).getSnapshot();
-            GlobalSnapshotMessage gsMessage = new GlobalSnapshotMessage(myInetSocketAddress,
-                                                                        initiator, 
-                                                                        marker, 
-                                                                        mySnapshot);
-            Forwarder.sendMessage(gsMessage);
-        }
-        
-        markerMap.remove(marker);
-    }
-
     private void inoltraMarker(Marker marker, InetSocketAddress excludedPeer)
     {
         for(InetSocketAddress neighbour: myNeighbours)
         {
-            if(!peersAreEqual(neighbour, excludedPeer) && 
-               !peersAreEqual(neighbour, marker.getInitiator()))
+            if(!peersAreEqual(neighbour, excludedPeer))
             {
                 System.out.println(">>> INOLTRO MARKER A " + neighbour);
                 GlobalSnapshotMessage gsMessage = new GlobalSnapshotMessage(myInetSocketAddress, neighbour, marker, null);
