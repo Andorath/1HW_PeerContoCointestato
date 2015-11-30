@@ -19,7 +19,7 @@ import static communication.OperationMessage.getRecordForMessage;
 import static peer1hw.Peer.peersAreEqual;
 
 /**
- *
+ * Server Handler con ACK
  * @author Damiano Di Stefano, Marco Giuseppe Salafia
  */
 
