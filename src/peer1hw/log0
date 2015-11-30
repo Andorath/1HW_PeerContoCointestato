@@ -23,3 +23,4 @@
   <thread>9</thread>
   <message>[PEER: /127.0.0.1:10000 deposita 1000.0]</message>
 </record>
+</log>
