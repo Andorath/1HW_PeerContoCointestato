@@ -20,8 +20,6 @@ public class JSMessage extends Message<String>
         this.neighbours = neighbours;
     }
     
-    //Getter and Setters
-
     public HashSet<InetSocketAddress> getNeighbours()
     {
         return neighbours;

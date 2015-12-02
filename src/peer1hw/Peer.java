@@ -35,8 +35,9 @@ public class Peer
     private ArrayList<OperationMessage> messageBuffer;
     
     private State stato;
-    private Logger logger;
     private TreeMap<Marker, Recorder> markerMap;
+    
+    private Logger logger;
 
     //Questo peer presuppone che la rete sia a regime per poter fare
     //operazioni sul conto. (Tutti i conti non hanno saldo quando vengono creati

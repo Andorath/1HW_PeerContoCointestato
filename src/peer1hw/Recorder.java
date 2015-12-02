@@ -46,7 +46,7 @@ public class Recorder
         closedChannels.add(i);
     }
     
-    public boolean shouldBeRegistered(InetSocketAddress sender)
+    public boolean shouldBeRecorded(InetSocketAddress sender)
     {
         for(InetSocketAddress isa: closedChannels)
             if (peersAreEqual(isa, sender))

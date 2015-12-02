@@ -30,7 +30,7 @@ public class UIPeer
         
         if (args.length < 1)
         {
-            System.out.println("ATTENZIONE: INSERIRE L'INDIRIZZO IP DEL JIN SERVER");
+            System.out.println("ATTENZIONE: INSERIRE L'INDIRIZZO IP DEL JOIN SERVER");
             System.exit(1);
         }
         

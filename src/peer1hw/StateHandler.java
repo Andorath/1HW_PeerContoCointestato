@@ -23,15 +23,11 @@ public class StateHandler extends Handler
     }
 
     @Override
-    public void flush()
-    {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    public void flush(){ }
 
     @Override
     public void close() throws SecurityException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
 }

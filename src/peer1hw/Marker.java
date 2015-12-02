@@ -31,20 +31,7 @@ public class Marker implements Serializable, Comparable<Marker>
 
     @Override
     public int compareTo(Marker o)
-    {
-        /*if (initiator.getHostString().equalsIgnoreCase(o.initiator.getHostString()) &&
-             Integer.compare(initiator.getPort(), o.initiator.getPort()) == 0)
-            return Integer.compare(globalSnapshotNumber, o.globalSnapshotNumber);
-        else if(!initiator.getHostString().equalsIgnoreCase(o.initiator.getHostString()))
-        {
-            return initiator.getHostString().compareToIgnoreCase(o.initiator.getHostString());
-        }
-        else
-        {
-            return Integer.compare(initiator.getPort(), o.initiator.getPort());
-        }        
-    }*/
-        
+    {   
         if(peersAreEqual(initiator, o.getInitiator())
            && globalSnapshotNumber == o.globalSnapshotNumber)
             return 0;

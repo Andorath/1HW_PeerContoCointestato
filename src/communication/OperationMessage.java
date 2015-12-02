@@ -36,7 +36,7 @@ public class OperationMessage extends Message<Double>
                          " deposita " + message.getBody() + "]";
                 break;
             case WITHDRAW:
-                record = "[PEER: " + message.getSender() +
+                record = "[MESSAGGIO -> PEER: " + message.getSender() +
                          " preleva " + message.getBody() + "]";
                 break;
             default:
@@ -61,8 +61,6 @@ public class OperationMessage extends Message<Double>
     {
         return operationType;
     }
-    
-    
 }
 
 

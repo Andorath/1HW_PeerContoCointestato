@@ -26,7 +26,7 @@ public class State implements Serializable
         history.add(record);
     }
     
-    protected void printInfrastacstrur()
+    protected void printHistory()
     {
         for(String record: history)
             System.out.println(record);

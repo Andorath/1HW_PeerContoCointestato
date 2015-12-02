@@ -94,7 +94,6 @@ public class ClientHandler implements Runnable
     }
 
     
-    //Si deve sincronizzare sull'Hashset dei vicini
     private void causalOrderMulticast(OperationMessage.OperationType operationType,
                                       double amount)
     {
@@ -119,7 +118,6 @@ public class ClientHandler implements Runnable
         conto.deposit(myInetSocketAddress, amount);
         String record = "[PEER: " + myInetSocketAddress +
                          " deposita " + amount + "]";
-        //Logger.getLogger(Peer.class.getName()).log(Level.INFO, record);
         logger.log(Level.INFO, record);
     }
     
@@ -163,12 +161,11 @@ public class ClientHandler implements Runnable
         }
         
         floodMarker(marker);
-        
     }
 
     private void printLog()
     {
-        stato.printInfrastacstrur();
+        stato.printHistory();
     }
     
     private void printNeighbours()

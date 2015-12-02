@@ -19,22 +19,22 @@ import static communication.OperationMessage.getRecordForMessage;
 import static peer1hw.Peer.peersAreEqual;
 
 /**
- * Server Handler con ACK
  * @author Damiano Di Stefano, Marco Giuseppe Salafia
  */
 
-//Questo thread gestisce solamente Peers o il Join Server.
-class ServerHandler implements Runnable
+public class ServerHandler implements Runnable
 {
     private InetSocketAddress myInetSocketAddress;
     private HashSet<InetSocketAddress> myNeighbours;
     private Socket incomingSocket;
     
     private VectorClock myVectorClock;
-    private Conto conto; 
-    private State stato;
     private ArrayList<OperationMessage> messageBuffer;
+    private Conto conto;
+    
+    private State stato;
     private final TreeMap<Marker, Recorder> markerMap;
+    
     private Logger logger;
     
     
@@ -62,8 +62,6 @@ class ServerHandler implements Runnable
     @Override
     public void run()
     {
-        //Lasciare solo l'input stream
-        //Outputstream fa saltare tutti in aria
         try (ObjectInputStream in = new ObjectInputStream(incomingSocket.getInputStream()))
         {
             Message m = (Message) in.readObject();
@@ -142,7 +140,7 @@ class ServerHandler implements Runnable
         {
             Recorder r = entry.getValue();
             InetSocketAddress sender = m.getSender();
-            if(r.shouldBeRegistered(sender))
+            if(r.shouldBeRecorded(sender))
             {
                 r.getSnapshot().updateChannelsState(record);
             }
@@ -178,6 +176,8 @@ class ServerHandler implements Runnable
         messageBuffer.add(m);
     }
 
+    //ci scusiamo per i commenti e per il metodo "monolitico" 
+    //ma è necessario per ricordarlo in un futuro prossimo
     private void processGlobalSnapshotMessage(GlobalSnapshotMessage m)
     {
         Marker marker = m.getMarker();
@@ -201,6 +201,7 @@ class ServerHandler implements Runnable
                         
                         GlobalSnapshot globalSnapshot = (GlobalSnapshot) recorder.getSnapshot();
                         globalSnapshot.addSnapshot(m.getBody());
+                        recorder.excludeChannelFromRecord(m.getSender());
                         recorder.incrementCounter();
                         
                         if(recorder.getCounter() == myNeighbours.size())
@@ -212,7 +213,7 @@ class ServerHandler implements Runnable
                 }
                 else
                 {
-                    //Gestiscila come PEER che ha sta già lavorando su questo marker
+                    //Gestiscila come PEER che sta già lavorando su questo marker
                     
                     //Mi aspetto un ack dai miei vicini tranne il committer
                     //Aumento il conteggio dei miei ack e aggiungo il sender ai banditi
@@ -244,7 +245,8 @@ class ServerHandler implements Runnable
                     
                 }
             }
-            else //Qui non sarò mai INITIATOR
+            else    //PRIMA VOLTA CHE RICEVO IL MARKER
+                    //Qui non sarò mai INITIATOR
             {
                 //Potrebbero arrivare ACK Spuri quindi:
                 //Se l'ACK (o messaggio) si riferisce a me come inititiator
@@ -286,6 +288,8 @@ class ServerHandler implements Runnable
                                                                                      marker,
                                                                                      null);
                         Forwarder.sendMessage(ackMessage);
+                        //non rimuovo il marker perchè avendo un solo vicino  
+                        //non l'ho nemmeno aggiunto.
                     }
                     else
                     {

@@ -36,7 +36,7 @@ public class LocalSnapshot extends Snapshot
     public void printSnapshot()
     {
         System.out.println("*************** " + ownerPeer + " ***************\n");
-        stato.printInfrastacstrur();
+        stato.printHistory();
         System.out.println("--------------- Stato dei Canali ---------------\n");
         printChannelStates();
     }
